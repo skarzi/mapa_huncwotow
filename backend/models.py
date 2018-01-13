@@ -49,27 +49,31 @@ class Users(BaseModel):
     oauth_token_secret = db.Column(db.String, default=None)
     oauth_verifier = db.Column(db.String, default=None)
 
-    def is_authorized(self):
-        return bool(self.oauth_token) and bool(
-            self.oauth_token_secret) and bool(self.oauth_verifier)
-
-    def get_classes(self):
-        auth = OAuth1Session(
+    @property
+    def oauth(self):
+        return OAuth1Session(
             current_app.config['USOS_CONSUMER_KEY'],
             current_app.config['USOS_CONSUMER_SECRET'],
             resource_owner_key=self.oauth_token,
             resource_owner_secret=self.oauth_token_secret,
             verifier=self.oauth_verifier
         )
-        response = auth.get(
+
+    def is_authorized(self):
+        return bool(self.oauth_token) and bool(
+            self.oauth_token_secret) and bool(self.oauth_verifier)
+
+    def get_classes(self):
+        response = self.oauth.get(
             current_app.config['USOS_TIMETABLE_URL'],
             params="fields=room_number|name|start_time"
         ).json()
-        first_classes = response[0]
-        date, time = first_classes["start_time"].split()
-        time = time[:-3]
-        return {
-            "name": first_classes["name"]["pl"],
-            "room": first_classes["room_number"],
-            "time": time
-        }
+        return response
+
+    def get_info(self):
+        response = self.oauth.get(
+            current_app.config['USOS_PERSONAL_DATA_URL'],
+            params="fields=id|first_name|last_name|sex|student_status|staff_status"
+        ).json()
+        return response
+

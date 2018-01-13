@@ -8,7 +8,12 @@ from backend.models import Users, POIs
 @restful_api.resource('/pois')
 class POIsResource(Resource):
     def get(self):
+        user = Users.query.filter_by(app_hash=request.args['hash']).one()
+        personal_data = user.get_info()
         return {
+            "personal_data": {
+                "name": personal_data["first_name"] + " " + personal_data["last_name"]
+            },
             "pois": [poi.serialize() for poi in POIs.query.all()]
         }
 
