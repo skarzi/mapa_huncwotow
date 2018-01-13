@@ -13,24 +13,25 @@ class Users(db.Model):
     oauth_verifier = db.Column(db.String, default=None)
 
     def is_authorized(self):
-        return (self.oauth_token and self.oauth_token_secret or
-                self.oauth_verifier)
+        return bool(self.oauth_token) and bool(
+            self.oauth_token_secret) and bool(self.oauth_verifier)
 
+    @classmethod
     def get_or_create(
-        cls,
-        app_hash,
-        oauth_token=None,
-        oauth_token_secret=None,
-        oauth_verifier=None,
+            cls,
+            app_hash,
+            oauth_token=None,
+            oauth_token_secret=None,
+            oauth_verifier=None,
     ):
         try:
             user = cls.query.filter_by(app_hash=app_hash).one()
         except NoResultFound:
             user = cls(
-                app_hash,
-                oauth_token,
-                oauth_token_secret,
-                oauth_verifier,
+                app_hash=app_hash,
+                oauth_token=oauth_token,
+                oauth_token_secret=oauth_token_secret,
+                oauth_verifier=oauth_verifier,
             ).save()
         return user
 

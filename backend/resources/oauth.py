@@ -2,10 +2,11 @@ from flask import (
     current_app,
     request,
     session,
-)
+    make_response)
 from flask_restful import Resource
 from requests_oauthlib import OAuth1Session
 
+from backend.models import Users
 from ..extensions import restful_api
 
 
@@ -13,6 +14,18 @@ from ..extensions import restful_api
 class Login(Resource):
     def get(self):
         app_hash = request.args['hash']
+        user = Users.get_or_create(app_hash=app_hash)
+        if user.is_authorized():
+            return {
+                "success": True
+            }
+        else:
+            return {
+                "success": False,
+                "url": self.get_oauth_url(app_hash)
+            }
+
+    def get_oauth_url(self, app_hash):
         oauth1_session = OAuth1Session(
             current_app.config['USOS_CONSUMER_KEY'],
             current_app.config['USOS_CONSUMER_SECRET'],
@@ -32,16 +45,16 @@ class Login(Resource):
             authorize_url = oauth1_session.authorization_url(
                 current_app.config['USOS_AUTHORIZE_URL'],
             )
-            return {'url': authorize_url}
-        else:
-            return {'message': 'Unauthorized'}, 401
+            return authorize_url
 
 
 @restful_api.resource('/oauth-authorized/<app_hash>')
 class OAuthAuthorized(Resource):
     def get(self, app_hash):
+        user = Users.query.filter_by(app_hash=app_hash).one()
         oauth_token = request.args.get('oauth_token', '')
-        oauth_verifier = request.args.get('oauth_verifier', '')
+        oauth_verifier = user.oauth_verifier = request.args.get(
+            'oauth_verifier', '')
         oauth_token_secret = session['oauth_token_secret']
 
         oauth1_session = OAuth1Session(
@@ -54,5 +67,10 @@ class OAuthAuthorized(Resource):
         resp = oauth1_session.fetch_access_token(
             current_app.config['USOS_ACCESS_TOKEN_URL'],
         )
-        session['oauth_token'] = resp['oauth_token']
-        session['oauth_token_secret'] = resp['oauth_token_secret']
+        user.oauth_token = resp['oauth_token']
+        user.oauth_token_secret = resp['oauth_token_secret']
+        user.save()
+
+        response = make_response("<script>window.close();</script>")
+        response.headers['Content-Type'] = 'text/html; charset=utf-8'
+        return response
