@@ -40,8 +40,12 @@ class Login(Resource):
             params=current_app.config['USOS_SCOPES'],
         )
         if response:
-            session['oauth_token'] = response['oauth_token']
-            session['oauth_token_secret'] = response['oauth_token_secret']
+            # session['oauth_token'] = response['oauth_token']
+            # session['oauth_token_secret'] = response['oauth_token_secret']
+            user = Users.query.filter_by(app_hash=app_hash).one()
+            user.oauth_token = response['oauth_token']
+            user.oauth_token_secret = response['oauth_token_secret']
+            user.save()
             authorize_url = oauth1_session.authorization_url(
                 current_app.config['USOS_AUTHORIZE_URL'],
             )
@@ -55,7 +59,7 @@ class OAuthAuthorized(Resource):
         oauth_token = request.args.get('oauth_token', '')
         oauth_verifier = user.oauth_verifier = request.args.get(
             'oauth_verifier', '')
-        oauth_token_secret = session['oauth_token_secret']
+        oauth_token_secret = user.oauth_token_secret
 
         oauth1_session = OAuth1Session(
             current_app.config['USOS_CONSUMER_KEY'],
