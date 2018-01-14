@@ -2,7 +2,7 @@ from flask import request
 from flask_restful import Resource
 
 from backend.extensions import restful_api
-from backend.models import Users, POIs
+from backend.models import POIs, Users
 
 
 @restful_api.resource('/pois')

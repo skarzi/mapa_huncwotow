@@ -1,12 +1,9 @@
-from flask import (
-    current_app,
-    request,
-    session,
-    make_response)
+from flask import current_app, make_response, request
 from flask_restful import Resource
 from requests_oauthlib import OAuth1Session
 
 from backend.models import Users
+
 from ..extensions import restful_api
 
 
@@ -40,8 +37,6 @@ class Login(Resource):
             params=current_app.config['USOS_SCOPES'],
         )
         if response:
-            # session['oauth_token'] = response['oauth_token']
-            # session['oauth_token_secret'] = response['oauth_token_secret']
             user = Users.query.filter_by(app_hash=app_hash).one()
             user.oauth_token = response['oauth_token']
             user.oauth_token_secret = response['oauth_token_secret']

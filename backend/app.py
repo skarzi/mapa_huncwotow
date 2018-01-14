@@ -2,12 +2,7 @@ import importlib
 
 from flask import Flask
 
-from .extensions import (
-    cors,
-    db,
-    restful_api,
-    _session,
-)
+from .extensions import _session, cors, db, restful_api
 
 
 def create_app(config_name=None, init_extensions=True):

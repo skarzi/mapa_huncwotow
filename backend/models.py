@@ -76,4 +76,3 @@ class Users(BaseModel):
             params="fields=id|first_name|last_name|sex|student_status|staff_status"
         ).json()
         return response
-
